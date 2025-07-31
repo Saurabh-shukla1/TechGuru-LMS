@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import slugify from "slugify";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RichTextEditor } from "@/components/rich-text-editor/Editor";
+import { Uploader } from "@/components/file-upoloader/Uploader";
 
 export default function Page() {
     const form = useForm<CourseShemaType>({
@@ -123,10 +125,11 @@ export default function Page() {
                                 <FormItem className="w-full">
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
-                                        <Textarea 
+                                        <RichTextEditor field={field}/>
+                                        {/* <Textarea 
                                         placeholder="Description" 
                                         className="min-h-[120px]" 
-                                        {...field} />
+                                        {...field} /> */}
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -141,9 +144,10 @@ export default function Page() {
                                     <FormItem className="w-full">
                                         <FormLabel>Thumbnail image</FormLabel>
                                         <FormControl>
-                                            <Input 
+                                            <Uploader />
+                                            {/* <Input 
                                             placeholder="thumbnail url" 
-                                            {...field} />
+                                            {...field} /> */}
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
