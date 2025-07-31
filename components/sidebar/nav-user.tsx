@@ -35,7 +35,7 @@ export function NavUser() {
   const { isMobile } = useSidebar();
   const { data: session, isPending } = authClient.useSession();
   const handleSignOut = useSignOut();
-  if (!isPending) return null;
+  if (isPending) return null;
 
   return (
     <SidebarMenu>
