@@ -30,7 +30,7 @@ export function Uploader() {
         isDeleting: false,
         fileType: "image",
     });
-    function uploadFile(file: File) {
+    async function uploadFile(file: File) {
        setFileState((prev) => ({
         ...prev,
         uploading: true,
@@ -38,7 +38,34 @@ export function Uploader() {
        }));
 
        try {
-        
+        //preseigned URL request
+        const preseignedResponse = await fetch('/api/s3/upload', {
+            method: 'POST',
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                fileName: file.name,
+                contentType: file.type,
+                size: file.size,
+                isImage: true, // Assuming all files are images for this example
+            }),
+        });
+
+        if(!preseignedResponse.ok) {
+            toast.error("Failed to get presigned URL");
+            setFileState((prev) => ({
+                    ...prev,
+                    uploading: false,
+                    progress: 0,
+                    error: true,
+                }));
+                return;
+        }
+
+        const { presignedUrl, key } = await preseignedResponse.json();
+
+        await new Promise((resolve, reject) => {
+
+        })
        } catch (error) {
         
        }
