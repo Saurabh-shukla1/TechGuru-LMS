@@ -3,7 +3,7 @@
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { courseCategories, courseLevels, courseSchema, CourseShemaType, courseStatus } from "@/lib/zodSchema";
-import { ArrowLeftIcon, PlusIcon, SparkleIcon } from "lucide-react";
+import { ArrowLeftIcon, Loader2, PlusIcon, SparkleIcon } from "lucide-react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,8 +14,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/rich-text-editor/Editor";
 import { Uploader } from "@/components/file-upoloader/Uploader";
+import { useTransition } from "react";
+import { tryCatch } from "@/hooks/try-catch";
+import { CreateCourse } from "./action";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
+
+    const [pending, startTransition] = useTransition();
+    const router = useRouter();
+
     const form = useForm<CourseShemaType>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
@@ -33,10 +42,24 @@ export default function Page() {
   });
 
   function onSubmit(values: CourseShemaType) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values)
-  }
+       startTransition(async () => {
+        const { data: result, error } = await tryCatch(CreateCourse(values))
+
+        if (error) {
+          toast.error("An error occurred while creating the course");
+          return;
+        }
+
+        // Handle success case
+        if(result.status === "success") {
+          toast.success("Course created successfully");
+          form.reset();
+          router.push("/admin/courses");
+        } else if(result.status === "error") {
+          toast.error(result.message);
+        }
+      });
+    }
     return (
         <>
         <div className="flex items-center gap-4">
@@ -144,10 +167,7 @@ export default function Page() {
                                     <FormItem className="w-full">
                                         <FormLabel>Thumbnail image</FormLabel>
                                         <FormControl>
-                                            <Uploader />
-                                            {/* <Input 
-                                            placeholder="thumbnail url" 
-                                            {...field} /> */}
+                                            <Uploader value={field.value} onChange={field.onChange} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -213,7 +233,12 @@ export default function Page() {
                                             <Input 
                                             placeholder="Duration" 
                                             type="number"
-                                            {...field} />
+                                            {...field} 
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                field.onChange(value === "" ? 0 : Number(value));
+                                            }} 
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -230,7 +255,12 @@ export default function Page() {
                                             <Input 
                                             placeholder="Price" 
                                             type="number"
-                                            {...field} />
+                                            {...field}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                field.onChange(value === "" ? 0 : Number(value));
+                                            }} 
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -263,8 +293,19 @@ export default function Page() {
                                 )}
                         />
 
-                        <Button>
-                            Create Course <PlusIcon className="ml-2" size={16} />
+                        <Button type="submit" disabled={pending}>
+                            {
+                                pending ? (
+                                    <>
+                                    creating...
+                                    <Loader2 className="size-4 animate-spin ml-1" />
+                                    </>
+                                ) : (
+                                    <>
+                                    Create Course <PlusIcon className="ml-2" size={16} />
+                                    </>
+                                )
+                            }
                         </Button>
                     </form>
                 </Form>

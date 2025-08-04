@@ -1,11 +1,10 @@
 import { env } from "@/lib/env";
 import { PutObjectCommand} from "@aws-sdk/client-s3";
-import { error } from "console";
 import { NextResponse } from "next/server";
 import z, { boolean } from "zod";
 import { v4 as uuidv4 } from 'uuid';
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import S3 from "@/lib/s3Client"
+import S3 from "@/lib/s3Client";
  
 
 export const fileUploadSchema = z.object({
@@ -41,8 +40,8 @@ export async function POST(request: Request) {
         });
 
         const presignedUrl = await getSignedUrl(S3, command, {
-            expiresIn: 360, // url expires in 6 minutes
-        });
+            expiresIn: 360, // URL valid for 6 min
+        })
 
         const response = {
             presignedUrl,
