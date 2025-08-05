@@ -1,16 +1,52 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { requireAdmin } from "@/app/data/admin/require-admin";
+import arcjet, { detectBot, fixedWindow } from "@/lib/arcjet";
 import { prisma } from "@/lib/db";
 import { ApiResponseProps } from "@/lib/types";
 import { courseSchema, CourseShemaType } from "@/lib/zodSchema";
-import { headers } from "next/headers";
+import { request } from "@arcjet/next";
+
+
+const aj = arcjet.withRule(
+        detectBot({
+            mode: "LIVE",
+            allow: [],
+        })
+    )
+    .withRule(
+        fixedWindow({
+            mode: "LIVE",
+            window: "1m",
+            max: 5,
+        })
+    );
 
 export async function CreateCourse(values: CourseShemaType): Promise<ApiResponseProps> {
+
+    
+    const session = await requireAdmin();
     try {
-        const session = await auth.api.getSession({
-            headers: await headers(),
+
+        const req = await request()
+        const decision = await aj.protect(req, {
+            fingerprint: session?.user.id as string,
         });
+
+        if (decision.isDenied()) {
+            if(decision.reason.isRateLimit()){
+                return {
+                    status: "error",
+                    message: "You have been blocked due to too many requests. Please try again later.",
+                }
+            }
+            else{
+                return {
+                    status: "error",
+                    message: "You are a bot! if you are not a bot, please contact support.",
+                };
+            }
+        }
 
         if (!session?.user) {
             return {
