@@ -13,7 +13,9 @@ export async function requireAdmin(): Promise<any> {
         return redirect("/login");
     }
 
-    if(session.user.role !== "ADMIN") {
+    if(session.user.role !== "admin") {
         return redirect("/not-admin");
     }
+
+    return session;
 }
