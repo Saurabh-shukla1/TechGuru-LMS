@@ -1,10 +1,7 @@
 "use client";
-
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button} from "@/components/ui/button";
 import { courseCategories, courseLevels, courseSchema, CourseShemaType, courseStatus } from "@/lib/zodSchema";
-import { ArrowLeftIcon, Loader2, PlusIcon, SparkleIcon } from "lucide-react";
-import Link from "next/link";
+import { Loader2, PlusIcon, SparkleIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -16,73 +13,57 @@ import { RichTextEditor } from "@/components/rich-text-editor/Editor";
 import { Uploader } from "@/components/file-upoloader/Uploader";
 import { useTransition } from "react";
 import { tryCatch } from "@/hooks/try-catch";
-import { CreateCourse } from "./action";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { editCourse } from "../action";
+import { AdminCourseType } from "@/app/data/admin/admin-get-course";
 
-export default function Page() {
+interface Props {
+    data: AdminCourseType
+}
+
+export function EditCourseForm({ data }: Props) {
 
     const [pending, startTransition] = useTransition();
     const router = useRouter();
 
     const form = useForm<CourseShemaType>({
-    resolver: zodResolver(courseSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      fileKey: "",
-      price: 0,
-      duration: 0,
-      level: "Beginner",
-      category: "Machine Learning",
-      status: "Draft",
-      slug: "",
-      smallDescription: "",
-    },
-  });
-
-  function onSubmit(values: CourseShemaType) {
-       startTransition(async () => {
-        const { data: result, error } = await tryCatch(CreateCourse(values))
-
-        if (error) {
-          toast.error("An error occurred while creating the course");
-          return;
-        }
-
-        // Handle success case
-        if(result.status === "success") {
-          toast.success("Course created successfully");
-          form.reset();
-          router.push("/admin/courses");
-        } else if(result.status === "error") {
-          toast.error(result.message);
-        }
+        resolver: zodResolver(courseSchema),
+        defaultValues: {
+          title: data.title,
+          description: data.description,
+          fileKey: data.fileKey,
+          price: data.price,
+          duration: data.duration,
+          level: data.level,
+          category: data.category as CourseShemaType["category"],
+          status: data.status,
+          slug: data.slug,
+          smallDescription: data.smallDescription,
+        },
       });
-    }
+
+      function onSubmit(values: CourseShemaType) {
+             startTransition(async () => {
+              const { data: result, error } = await tryCatch(editCourse(values, data.id))
+      
+              if (error) {
+                toast.error("An error occurred while creating the course");
+                return;
+              }
+      
+              // Handle success case
+              if(result.status === "success") {
+                toast.success("Course created successfully");
+                form.reset();
+                router.push("/admin/courses");
+              } else if(result.status === "error") {
+                toast.error(result.message);
+              }
+            });
+          }
     return (
-        <>
-        <div className="flex items-center gap-4">
-            <Link 
-            href="/admin/courses"
-            className={buttonVariants({
-                variant: "outline",
-                size: "icon"
-            })}
-            >
-                <ArrowLeftIcon /> 
-            </Link>
-            <h1 className="text-2xl font-bold">Create Courses</h1>
-        </div>
-        <Card>
-            <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-                <CardDescription>
-                  Provide Basic Information about the course  
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
+        <Form {...form}>
                     <form 
                     className="space-y-6"
                     onSubmit={form.handleSubmit(onSubmit)}
@@ -149,10 +130,6 @@ export default function Page() {
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
                                         <RichTextEditor field={field}/>
-                                        {/* <Textarea 
-                                        placeholder="Description" 
-                                        className="min-h-[120px]" 
-                                        {...field} /> */}
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -297,20 +274,17 @@ export default function Page() {
                             {
                                 pending ? (
                                     <>
-                                    creating...
+                                    updating...
                                     <Loader2 className="size-4 animate-spin ml-1" />
                                     </>
                                 ) : (
                                     <>
-                                    Create Course <PlusIcon className="ml-2" size={16} />
+                                    Update Course <PlusIcon className="ml-2" size={16} />
                                     </>
                                 )
                             }
                         </Button>
                     </form>
                 </Form>
-            </CardContent>
-        </Card>
-        </>
     )
 }

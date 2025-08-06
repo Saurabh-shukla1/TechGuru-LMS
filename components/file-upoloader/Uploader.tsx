@@ -6,8 +6,7 @@ import { cn } from '@/lib/utils';
 import { RenderEmptyState, RenderErrorState, RenderUploadedState, RenderUploadingState } from './RenderState';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
-import { file } from 'better-auth';
-import { tr } from 'zod/v4/locales';
+import { useContructUrl } from '@/hooks/use-contruct-url';
 
 interface UploaderState {
     id: string | null;
@@ -27,6 +26,7 @@ interface iAppProps {
 }
 
 export function Uploader({value, onChange}: iAppProps) {
+    const fileUrl = useContructUrl(value || "");
 
     const [fileState, setFileState] = useState<UploaderState>({
         error: false,
@@ -37,6 +37,7 @@ export function Uploader({value, onChange}: iAppProps) {
         isDeleting: false,
         fileType: "image",
         key: value,
+        objectUrl: fileUrl
     });
     async function uploadFile(file: File) {
        setFileState((prev) => ({

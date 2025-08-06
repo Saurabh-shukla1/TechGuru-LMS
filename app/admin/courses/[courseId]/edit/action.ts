@@ -2,13 +2,10 @@
 
 import { requireAdmin } from "@/app/data/admin/require-admin";
 import arcjet, { detectBot, fixedWindow } from "@/lib/arcjet";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ApiResponseProps } from "@/lib/types";
 import { courseSchema, CourseShemaType } from "@/lib/zodSchema";
 import { request } from "@arcjet/next";
-import { headers } from "next/headers";
-
 
 const aj = arcjet.withRule(
         detectBot({
@@ -24,15 +21,13 @@ const aj = arcjet.withRule(
         })
     );
 
-export async function CreateCourse(values: CourseShemaType): Promise<ApiResponseProps> {
+export async function editCourse(data: CourseShemaType, courseId: string): Promise<ApiResponseProps> {
+    const user = await requireAdmin();
 
-    
-    const session = await requireAdmin();
     try {
-
         const req = await request()
-        const decision = await aj.protect(req, {
-            fingerprint: session?.user.id as string,
+            const decision = await aj.protect(req, {
+            fingerprint: user.user.id,
         });
 
         if (decision.isDenied()) {
@@ -49,40 +44,32 @@ export async function CreateCourse(values: CourseShemaType): Promise<ApiResponse
                 };
             }
         }
-        if (!session?.user) {
+        const result = courseSchema.safeParse(data);
+
+        if(!result.success) {
             return {
                 status: "error",
-                message: "Unauthorized",
+                message: "Invalid data",
             };
         }
 
-        const validation = courseSchema.safeParse(values);
-
-        if (!validation.success) {
-            return {
-                status: "error",
-                message: "Invalid course data",
-            };
-        }
-
-        const data = await prisma.course.create({
+        await prisma.course.update({
+            where: {
+                id: courseId,
+                userId: user.user.id,
+            },
             data: {
-                ...validation.data,
-                userId: session.user.id as string,
+                ...result.data,
             }
         });
-
-        // Return success response
         return {
             status: "success",
-            message: "Course created successfully",
+            message: "Course updated successfully",
         };
-
-    } catch (error) {
-        console.log("Error creating course:", error);
+    } catch  {
         return {
             status: "error",
-            message: "Failed to create course",
+            message: "Failed to update course",
         };
     }
 }

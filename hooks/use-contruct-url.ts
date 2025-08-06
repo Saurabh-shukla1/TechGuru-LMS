@@ -1,0 +1,7 @@
+import { env } from "@/lib/env";
+
+
+export function useContructUrl(key: string): string {
+    return `https://${env.NEXT_PUBLIC_S3_BUCKET_NAME_IMAGES}.t3.storageapi.dev/${key}`;
+}
+//https://my-techguru-lms.t3.storageapi.dev/
